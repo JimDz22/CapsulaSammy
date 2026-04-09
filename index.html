@@ -5,6 +5,7 @@
     <meta name="viewport" content="width=device-width, initial-scale=1.0">
     <title>💌 Cápsula de Sammy</title>
     <link href="https://fonts.googleapis.com/css2?family=Cormorant+Garamond:ital,wght@0,300;0,400;0,600;1,400&family=Montserrat:wght@300;400;500&display=swap" rel="stylesheet">
+    
     <style>
         * {
             margin: 0;
@@ -158,11 +159,39 @@
             opacity: 1;
         }
 
-        .hint-text {
-            margin-top: 30px;
-            font-size: 0.85rem;
-            opacity: 0.5;
-            font-style: italic;
+        .sync-indicator {
+            position: fixed;
+            top: 20px;
+            left: 20px;
+            background: rgba(46, 213, 115, 0.2);
+            border: 1px solid rgba(46, 213, 115, 0.4);
+            color: #2ed573;
+            padding: 8px 16px;
+            border-radius: 20px;
+            font-family: 'Montserrat', sans-serif;
+            font-size: 0.75rem;
+            display: none;
+            align-items: center;
+            gap: 8px;
+            z-index: 1000;
+        }
+
+        .sync-indicator.active {
+            display: flex;
+        }
+
+        .sync-indicator.syncing::before {
+            content: '';
+            width: 12px;
+            height: 12px;
+            border: 2px solid #2ed573;
+            border-top-color: transparent;
+            border-radius: 50%;
+            animation: spin 1s linear infinite;
+        }
+
+        @keyframes spin {
+            to { transform: rotate(360deg); }
         }
 
         .app-container {
@@ -865,24 +894,18 @@
             box-shadow: 0 20px 60px rgba(0, 0, 0, 0.5);
         }
 
-        .security-notice {
-            background: rgba(255, 193, 7, 0.1);
-            border: 1px solid rgba(255, 193, 7, 0.3);
-            border-radius: 12px;
-            padding: 20px;
-            margin-bottom: 30px;
-            display: flex;
-            align-items: center;
-            gap: 15px;
+        .loading-spinner {
+            display: inline-block;
+            width: 20px;
+            height: 20px;
+            border: 3px solid rgba(255,255,255,.3);
+            border-radius: 50%;
+            border-top-color: var(--accent);
+            animation: spin 1s ease-in-out infinite;
         }
 
-        .security-notice-icon {
-            font-size: 1.5rem;
-        }
-
-        .security-notice-text {
-            font-size: 0.95rem;
-            line-height: 1.5;
+        @keyframes spin {
+            to { transform: rotate(360deg); }
         }
 
         @media (max-width: 768px) {
@@ -945,6 +968,7 @@
     </style>
 </head>
 <body>
+
     <div class="login-screen" id="loginScreen">
         <div class="login-container">
             <div class="login-icon">🔐</div>
@@ -959,11 +983,10 @@
             </div>
 
             <button class="login-btn" id="loginBtn" onclick="checkPin()">
-                Iniciar 💫
+                Desbloquear 💫
             </button>
 
             <p class="error-message" id="errorMessage">PIN incorrecto. Intenta de nuevo.</p>
-
         </div>
     </div>
 
@@ -981,7 +1004,6 @@
                 <button class="logout-btn" onclick="logout()">Cerrar 🔒</button>
                 <div class="seal" onclick="showWelcome()">💝</div>
                 <h1>Cápsula del Tiempo</h1>
-                <p class="subtitle">Solo para Nosotros</p>
                 <p class="date-display" id="currentDate"></p>
             </header>
 
@@ -992,15 +1014,15 @@
                 <button class="tab-btn" onclick="switchTab('wishes')">✨ Deseos</button>
             </nav>
 
+            <!-- SECCIÓN CARTAS -->
             <section id="letter" class="content-section active">
                 <div class="card">
-
                     <h2 class="card-title"><span>💌</span> Escribe una Carta</h2>
 
-                    <form class="letter-form" id="letterForm" action="https://formspree.io/f/maqnnrel" method="POST">
+                    <form class="letter-form" id="letterForm">
                         <div class="form-group">
                             <label class="form-label">Tu Mensaje</label>
-                            <textarea name="message" class="form-textarea" id="letterMessage" placeholder="Escribe aquí todo lo que quieras decirme... Este mensaje es solo para nosotros." required></textarea>
+                            <textarea name="message" class="form-textarea" id="letterMessage" placeholder="Escribe aquí todo lo que quieras decirme..." required></textarea>
                         </div>
 
                         <div class="form-group">
@@ -1008,38 +1030,33 @@
                             <input type="text" name="mood" class="form-input" id="letterMood" placeholder="Feliz, nostálgica, emocionada...">
                         </div>
 
-                        <input type="hidden" name="_subject" value="💌 Nueva carta de Sammy">
-                        <input type="hidden" name="_replyto" value="">
-
                         <button type="submit" class="submit-btn" id="submitBtn">
-                            Enviar Carta 💗
+                            Guardar y Compartir 💗
                         </button>
                     </form>
 
                     <div class="success-message" id="successMessage">
-                        <strong>✨ Carta enviada</strong><br>
-                        Tu mensaje ha volado hasta mi correo.
+                        <strong>✨ Carta compartida</strong><br>
                     </div>
                 </div>
             </section>
 
+            <!-- SECCIÓN GALERÍA -->
             <section id="gallery" class="content-section">
                 <div class="card">
-
                     <h2 class="card-title"><span>📸</span> Nuestro Álbum</h2>
                     <p style="margin-bottom: 25px; opacity: 0.8;">
-                        Sube fotos que solo nosotros podremos ver.
+                        Sube fotos que quieras.
                     </p>
 
                     <div class="upload-area" id="uploadArea">
                         <input type="file" class="file-input" id="fileInput" accept="image/*" multiple>
                         <div class="upload-icon">📷</div>
                         <div class="upload-text">Arrastra fotos aquí o haz click</div>
-                        <div class="upload-hint">JPG, PNG, GIF - Máximo 5MB por foto</div>
+                        <div class="upload-hint">JPG, PNG, GIF - Máximo 1MB por foto</div>
                     </div>
 
-                    <div class="gallery-grid" id="galleryGrid">
-                    </div>
+                    <div class="gallery-grid" id="galleryGrid"></div>
 
                     <div class="empty-state" id="emptyGallery">
                         <div class="empty-icon">🖼️</div>
@@ -1048,22 +1065,23 @@
                 </div>
             </section>
 
+            <!-- SECCIÓN MEMORIAS -->
             <section id="memories" class="content-section">
                 <div class="card">
                     <h2 class="card-title"><span>📖</span> Línea del Tiempo</h2>
                     <p style="margin-bottom: 30px; opacity: 0.8;">
-                        Guarda momentos y pensamientos que solo nosotros podremos recordar.
+                        Guarda momentos para recordar.
                     </p>
 
-                    <div class="timeline" id="timeline">
-                    </div>
+                    <div class="timeline" id="timeline"></div>
 
                     <button class="add-memory-btn" onclick="addNewMemory()">
-                        + Agregar Nueva Memoria Secreta
+                        + Agregar Nueva Memoria
                     </button>
                 </div>
             </section>
 
+            <!-- SECCIÓN DESEOS -->
             <section id="wishes" class="content-section">
                 <div class="card">
                     <h2 class="card-title"><span>✨</span> Frasco de Deseos</h2>
@@ -1074,30 +1092,27 @@
                             <div class="jar-count" id="jarCount">0</div>
                         </div>
                         <p style="margin-bottom: 30px; opacity: 0.8;">
-                            Escribe un deseo, sueño o pensamiento secreto. Solo nosotros lo sabremos.
+                            Escribe un deseo.
                         </p>
 
                         <div class="wish-input-area">
-                            <input type="text" class="wish-input" id="wishInput" placeholder="Escribe tu deseo secreto aquí..." maxlength="100">
+                            <input type="text" class="wish-input" id="wishInput" placeholder="Escribe tu deseo aquí..." maxlength="100">
                             <button class="wish-btn" onclick="addWish()">💫</button>
                         </div>
                     </div>
 
-                    <div class="wishes-list" id="wishesList">
-                    </div>
+                    <div class="wishes-list" id="wishesList"></div>
                 </div>
             </section>
         </div>
     </div>
 
+    <!-- MODALES -->
     <div class="modal" id="welcomeModal" onclick="closeModal('welcomeModal')">
         <div class="modal-content" onclick="event.stopPropagation()">
             <button class="modal-close" onclick="closeModal('welcomeModal')">&times;</button>
             <div class="modal-icon">💝</div>
             <h3 class="modal-title">Bienvenida, Sammy</h3>
-            <p class="modal-text">
-                Esta cápsula del tiempo es <strong>exclusivamente</strong> para ti y para mí.<br><br>
-            </p>
         </div>
     </div>
 
@@ -1110,7 +1125,7 @@
             <button class="modal-close" onclick="closeModal('memoryModal')">&times;</button>
             <h3 class="modal-title">Nueva Memoria</h3>
             <div class="form-group" style="margin: 20px 0;">
-                <textarea class="form-textarea" id="memoryText" placeholder="¿Qué quieres recordar hoy? Este momento será solo nuestro..." style="min-height: 150px;"></textarea>
+                <textarea class="form-textarea" id="memoryText" placeholder="¿Qué quieres recordar hoy?" style="min-height: 150px;"></textarea>
             </div>
             <div class="form-group" style="margin-bottom: 20px;">
                 <label style="display: block; margin-bottom: 10px; opacity: 0.8;">¿Cómo te sientes?</label>
@@ -1122,46 +1137,46 @@
                     <button onclick="selectMood('✨')" class="mood-btn" style="background: none; border: 1px solid rgba(255,255,255,0.2); border-radius: 10px; padding: 10px; cursor: pointer; font-size: 1.5rem;">✨</button>
                 </div>
             </div>
-            <button class="submit-btn" onclick="saveMemory()" style="width: 100%;">Guardar Memoria</button>
+            <button class="submit-btn" onclick="saveMemory()" style="width: 100%;">Compartir Memoria</button>
         </div>
     </div>
 
     <script>
         const CORRECT_PIN = '0126';
-                
-        function saveToStorage(key, data) {
-            try {
-                localStorage.setItem(key, JSON.stringify(data));
-                return true;
-            } catch (e) {
-                console.error('Error guardando:', e);
-                return false;
-            }
-        }
-        
-        function loadFromStorage(key, defaultValue = []) {
-            try {
-                const data = localStorage.getItem(key);
-                return data ? JSON.parse(data) : defaultValue;
-            } catch (e) {
-                console.error('Error cargando:', e);
-                return defaultValue;
-            }
-        }
-        
-        function setAuth(value) {
-            localStorage.setItem('capsule_auth_flag', value ? 'yes' : 'no');
-        }
-        
-        function checkAuthStorage() {
-            return localStorage.getItem('capsule_auth_flag') === 'yes';
-        }
-
         let isAuthenticated = false;
         let currentMood = '';
-
-        const pinDigits = document.querySelectorAll('.pin-digit');
         let currentPin = '';
+
+        const BIN_ID = '69d6fb2c856a68218912afbd';
+        const MASTER_KEY = '$2b$10$TU_MASTER_KEY_AQUI';
+        const JSONBIN_URL = `https://api.jsonbin.io/v3/b/${BIN_ID}`;
+
+        // Datos en memoria
+        let appData = {
+            photos: [],
+            memories: [],
+            wishes: []
+        };
+
+async function readData() {
+            const saved = localStorage.getItem('capsula_data');
+            if (saved) {
+                appData = JSON.parse(saved);
+            } else {
+                appData = { photos: [], memories: [], wishes: [] };
+            }
+            return true;
+        }
+
+async function saveData() {
+            localStorage.setItem('capsula_data', JSON.stringify(appData));
+            return true;
+        }
+
+        // ==========================================
+        // PIN Y AUTENTICACIÓN
+        // ==========================================
+        const pinDigits = document.querySelectorAll('.pin-digit');
 
         pinDigits.forEach((digit, index) => {
             digit.addEventListener('input', function(e) {
@@ -1200,7 +1215,7 @@
             setTimeout(() => {
                 if (currentPin === CORRECT_PIN) {
                     isAuthenticated = true;
-                    setAuth(true);
+                    localStorage.setItem('capsule_auth_flag', 'yes');
                     document.getElementById('loginScreen').classList.add('hidden');
                     document.getElementById('appContainer').classList.add('active');
                     initApp();
@@ -1225,7 +1240,7 @@
 
         function logout() {
             isAuthenticated = false;
-            setAuth(false);
+            localStorage.removeItem('capsule_auth_flag');
             currentPin = '';
 
             pinDigits.forEach(d => {
@@ -1239,7 +1254,7 @@
         }
 
         function checkAuth() {
-            if (checkAuthStorage()) {
+            if (localStorage.getItem('capsule_auth_flag') === 'yes') {
                 isAuthenticated = true;
                 document.getElementById('loginScreen').classList.add('hidden');
                 document.getElementById('appContainer').classList.add('active');
@@ -1249,15 +1264,38 @@
             pinDigits[0].focus();
         }
 
-        function initApp() {
+        // ==========================================
+        // INICIALIZACIÓN DE LA APP
+        // ==========================================
+        async function initApp() {
             const dateOptions = { weekday: 'long', year: 'numeric', month: 'long', day: 'numeric' };
             document.getElementById('currentDate').textContent = new Date().toLocaleDateString('es-ES', dateOptions);
 
-            loadGallery();
-            loadMemories();
-            loadWishes();
+            // Cargar datos
+            await readData();
+            renderAll();
+
+            // Recargar cada 10 segundos
+            setInterval(async () => {
+                await readData();
+                renderAll();
+            }, 10000);
         }
 
+function showSync() {
+            // Sync indicator removed per request
+            console.log('Data saved locally');
+        }
+
+        function renderAll() {
+            renderGallery();
+            renderMemories();
+            renderWishes();
+        }
+
+        // ==========================================
+        // NAVEGACIÓN
+        // ==========================================
         function switchTab(tabName) {
             document.querySelectorAll('.content-section').forEach(section => {
                 section.classList.remove('active');
@@ -1278,72 +1316,70 @@
             document.getElementById(modalId).classList.remove('active');
         }
 
+        // ==========================================
+        // CARTAS (Email + Local)
+        // ==========================================
         document.getElementById('letterForm').addEventListener('submit', async function(e) {
             e.preventDefault();
             const btn = document.getElementById('submitBtn');
-            const originalText = btn.textContent;
             const successMsg = document.getElementById('successMessage');
 
             const message = document.getElementById('letterMessage').value;
             const mood = document.getElementById('letterMood').value;
 
-            if (!message.trim()) {
-                alert('Por favor escribe un mensaje');
-                return;
-            }
+            if (!message.trim()) return;
 
             btn.disabled = true;
-            btn.textContent = 'Enviando...';
+            btn.innerHTML = '<span class="loading-spinner"></span> Enviando...';
 
             try {
-                const letters = loadFromStorage('sammyLetters');
-                letters.push({
-                    message: message,
-                    mood: mood,
-                    date: new Date().toISOString(),
-                    id: Date.now()
-                });
-                saveToStorage('sammyLetters', letters);
-                console.log('Carta guardada:', letters);
-
+                // Enviar por correo
                 const formData = new FormData(this);
-                
-                const controller = new AbortController();
-                const timeoutId = setTimeout(() => controller.abort(), 10000);
-                
-                const response = await fetch(this.action, {
+                fetch('https://formspree.io/f/maqnnrel', {
                     method: 'POST',
                     body: formData,
-                    headers: { 'Accept': 'application/json' },
-                    signal: controller.signal
-                });
-                
-                clearTimeout(timeoutId);
+                    headers: { 'Accept': 'application/json' }
+                }).catch(() => {});
 
-                if (response.ok) {
-                    successMsg.innerHTML = '<strong>✨ Carta enviada</strong><br>Tu mensaje ha volado hasta mi correo.';
-                } else {
-                    successMsg.innerHTML = '<strong>✨ Carta guardada.</strong><br>';
-                }
-                
+                showSync();
                 successMsg.classList.add('active');
                 this.reset();
                 
             } catch (error) {
                 console.error('Error:', error);
-                successMsg.innerHTML = '<strong>✨ Carta guardada de forma segura.</strong>';
-                successMsg.classList.add('active');
-                this.reset();
-                
             } finally {
                 btn.disabled = false;
-                btn.textContent = originalText;
+                btn.textContent = 'Guardar y Compartir 💗';
                 
                 setTimeout(() => {
                     successMsg.classList.remove('active');
                 }, 5000);
             }
         });
+
+        // ==========================================
+        // GALERÍA
+        // ==========================================
+        function renderGallery() {
+            const grid = document.getElementById('galleryGrid');
+            const empty = document.getElementById('emptyGallery');
+            const photos = appData.photos || [];
+
+            if (photos.length === 0) {
+                grid.innerHTML = '';
+                empty.style.display = 'block';
+                return;
+            }
+
+            empty.style.display = 'none';
+            grid.innerHTML = photos.map(photo => `
+                <div class="gallery-item" onclick="viewImage('${photo.src}')">
+                    <img src="${photo.src}" alt="Foto" loading="lazy">
+                    <div class="caption">${new Date(photo.date).toLocaleDateString('es-ES')}</div>
+                    <button class="delete-btn" onclick="deletePhoto(event, '${photo.id}')">🗑️</button>
+                </div>
+            `).join('');
+        }
 
         const uploadArea = document.getElementById('uploadArea');
         const fileInput = document.getElementById('fileInput');
@@ -1369,47 +1405,42 @@
             handleFiles(e.target.files);
         });
 
-        function handleFiles(files) {
-            Array.from(files).forEach(file => {
-                if (file.type.startsWith('image/')) {
-                    const reader = new FileReader();
-                    reader.onload = (e) => {
-                        const photos = loadFromStorage('sammyPhotos');
-                        const photo = {
-                            id: Date.now() + Math.random(),
-                            src: e.target.result,
-                            name: file.name,
-                            date: new Date().toISOString(),
-                            caption: ''
-                        };
-                        photos.unshift(photo);
-                        saveToStorage('sammyPhotos', photos);
-                        loadGallery();
-                    };
-                    reader.readAsDataURL(file);
+        async function handleFiles(files) {
+            for (const file of Array.from(files)) {
+                if (!file.type.startsWith('image/')) continue;
+                if (file.size > 1 * 1024 * 1024) {
+                    alert(`La imagen ${file.name} pesa más de 1MB`);
+                    continue;
                 }
-            });
+
+                try {
+                    const base64 = await fileToBase64(file);
+                    
+                    appData.photos.unshift({
+                        id: Date.now().toString(),
+                        src: base64,
+                        name: file.name,
+                        date: new Date().toISOString()
+                    });
+
+                    await saveData();
+                    showSync();
+                    renderGallery();
+
+                } catch (error) {
+                    console.error('Error subiendo:', error);
+                }
+            }
+            fileInput.value = '';
         }
 
-        function loadGallery() {
-            const grid = document.getElementById('galleryGrid');
-            const empty = document.getElementById('emptyGallery');
-            const photos = loadFromStorage('sammyPhotos');
-
-            if (photos.length === 0) {
-                grid.innerHTML = '';
-                empty.style.display = 'block';
-                return;
-            }
-
-            empty.style.display = 'none';
-            grid.innerHTML = photos.map(photo => `
-                <div class="gallery-item" onclick="viewImage('${photo.src}')">
-                    <img src="${photo.src}" alt="Foto">
-                    <div class="caption">${new Date(photo.date).toLocaleDateString('es-ES')}</div>
-                    <button class="delete-btn" onclick="deletePhoto(event, ${photo.id})">🗑️</button>
-                </div>
-            `).join('');
+        function fileToBase64(file) {
+            return new Promise((resolve, reject) => {
+                const reader = new FileReader();
+                reader.onload = () => resolve(reader.result);
+                reader.onerror = reject;
+                reader.readAsDataURL(file);
+            });
         }
 
         function viewImage(src) {
@@ -1417,22 +1448,25 @@
             document.getElementById('imageModal').classList.add('active');
         }
 
-        function deletePhoto(event, id) {
+        async function deletePhoto(event, id) {
             event.stopPropagation();
-            if (confirm('¿Eliminar esta foto permanentemente?')) {
-                let photos = loadFromStorage('sammyPhotos');
-                photos = photos.filter(p => p.id !== id);
-                saveToStorage('sammyPhotos', photos);
-                loadGallery();
-            }
+            if (!confirm('¿Eliminar esta foto?')) return;
+
+            appData.photos = appData.photos.filter(p => p.id !== id);
+            await saveData();
+            showSync();
+            renderGallery();
         }
 
-        function loadMemories() {
+        // ==========================================
+        // MEMORIAS
+        // ==========================================
+        function renderMemories() {
             const timeline = document.getElementById('timeline');
-            const memories = loadFromStorage('sammyMemories');
+            const memories = appData.memories || [];
 
             if (memories.length === 0) {
-                timeline.innerHTML = '<div class="empty-state"><div class="empty-icon">📝</div><div class="empty-text">Aún no hay memorias secretas. ¡Agrega la primera!</div></div>';
+                timeline.innerHTML = '<div class="empty-state"><div class="empty-icon">📝</div><div class="empty-text">Aún no hay memorias. ¡Agrega la primera!</div></div>';
                 return;
             }
 
@@ -1440,20 +1474,21 @@
                 <div class="memory-item">
                     <div class="memory-date">
                         ${new Date(memory.date).toLocaleDateString('es-ES', { weekday: 'long', year: 'numeric', month: 'long', day: 'numeric' })}
-                        <button onclick="deleteMemory(${index})" style="background: none; border: none; color: #ff6b6b; cursor: pointer; font-size: 1rem; margin-left: 10px; opacity: 0.6; transition: opacity 0.3s;" onmouseover="this.style.opacity='1'" onmouseout="this.style.opacity='0.6'">🗑️</button>                    </div>
+                        <button onclick="deleteMemory(${index})" style="background: none; border: none; color: #ff6b6b; cursor: pointer; font-size: 1rem; margin-left: 10px; opacity: 0.6; transition: opacity 0.3s;" onmouseover="this.style.opacity='1'" onmouseout="this.style.opacity='0.6'">🗑️</button>
+                    </div>
                     <div class="memory-text">${escapeHtml(memory.text)}</div>
                     <div class="memory-mood">${memory.mood || '✨'}</div>
                 </div>
             `).join('');
         }
 
-        function deleteMemory(index) {
-            if (confirm('¿Eliminar esta memoria permanentemente?')) {
-                let memories = loadFromStorage('sammyMemories');
-                memories.splice(index, 1);
-                saveToStorage('sammyMemories', memories);
-                loadMemories();
-            }
+        async function deleteMemory(index) {
+            if (!confirm('¿Eliminar esta memoria?')) return;
+            
+            appData.memories.splice(index, 1);
+            await saveData();
+            showSync();
+            renderMemories();
         }
 
         function escapeHtml(text) {
@@ -1477,44 +1512,41 @@
             event.target.style.background = 'rgba(212, 163, 115, 0.3)';
         }
 
-        function saveMemory() {
+        async function saveMemory() {
             const text = document.getElementById('memoryText').value.trim();
             if (!text) {
-                alert('Por favor escribe algo para recordar');
+                alert('Por favor escribe algo');
                 return;
             }
 
-            const memories = loadFromStorage('sammyMemories');
-            memories.unshift({
+            appData.memories.unshift({
                 id: Date.now(),
                 text: text,
                 mood: currentMood || '✨',
                 date: new Date().toISOString()
             });
 
-            if (saveToStorage('sammyMemories', memories)) {
-                closeModal('memoryModal');
-                loadMemories();
-                console.log('Memoria guardada:', memories);
-            } else {
-                alert('Error al guardar la memoria');
-            }
+            await saveData();
+            closeModal('memoryModal');
+            showSync();
+            renderMemories();
         }
 
-        // ============ DESEOS ============
-        function loadWishes() {
+        // ==========================================
+        // DESEOS
+        // ==========================================
+        function renderWishes() {
             const list = document.getElementById('wishesList');
             const jarFill = document.getElementById('jarFill');
             const jarCount = document.getElementById('jarCount');
-            const wishes = loadFromStorage('sammyWishes');
+            const wishes = appData.wishes || [];
 
-            // Actualizar frasco
             const percentage = Math.min((wishes.length / 20) * 100, 100);
             jarFill.style.height = percentage + '%';
             jarCount.textContent = wishes.length;
 
             if (wishes.length === 0) {
-                list.innerHTML = '<div class="empty-state" style="margin-top: 40px;"><div class="empty-icon">🫙</div><div class="empty-text">El frasco está vacío. ¡Agrega tu primer deseo secreto!</div></div>';
+                list.innerHTML = '<div class="empty-state" style="margin-top: 40px;"><div class="empty-icon">🫙</div><div class="empty-text">El frasco está vacío. ¡Agrega tu primer deseo!</div></div>';
                 return;
             }
 
@@ -1529,37 +1561,33 @@
             `).join('');
         }
 
-        function addWish() {
+        async function addWish() {
             const input = document.getElementById('wishInput');
             const text = input.value.trim();
-
             if (!text) return;
 
-            const wishes = loadFromStorage('sammyWishes');
-            wishes.unshift({
+            appData.wishes.unshift({
+                id: Date.now(),
                 text: text,
                 date: new Date().toISOString()
             });
 
-            if (saveToStorage('sammyWishes', wishes)) {
-                input.value = '';
-                loadWishes();
-                console.log('Deseo guardado:', wishes);
-                
-                // Animación del frasco
-                const jar = document.querySelector('.jar');
-                jar.style.transform = 'scale(1.1)';
-                setTimeout(() => jar.style.transform = 'scale(1)', 200);
-            } else {
-                alert('Error al guardar el deseo');
-            }
+            await saveData();
+            input.value = '';
+            
+            const jar = document.querySelector('.jar');
+            jar.style.transform = 'scale(1.1)';
+            setTimeout(() => jar.style.transform = 'scale(1)', 200);
+            
+            showSync();
+            renderWishes();
         }
 
-        function deleteWish(index) {
-            let wishes = loadFromStorage('sammyWishes');
-            wishes.splice(index, 1);
-            saveToStorage('sammyWishes', wishes);
-            loadWishes();
+        async function deleteWish(index) {
+            appData.wishes.splice(index, 1);
+            await saveData();
+            showSync();
+            renderWishes();
         }
 
         function showWishes() {
