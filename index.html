@@ -159,41 +159,6 @@
             opacity: 1;
         }
 
-        .sync-indicator {
-            position: fixed;
-            top: 20px;
-            left: 20px;
-            background: rgba(46, 213, 115, 0.2);
-            border: 1px solid rgba(46, 213, 115, 0.4);
-            color: #2ed573;
-            padding: 8px 16px;
-            border-radius: 20px;
-            font-family: 'Montserrat', sans-serif;
-            font-size: 0.75rem;
-            display: none;
-            align-items: center;
-            gap: 8px;
-            z-index: 1000;
-        }
-
-        .sync-indicator.active {
-            display: flex;
-        }
-
-        .sync-indicator.syncing::before {
-            content: '';
-            width: 12px;
-            height: 12px;
-            border: 2px solid #2ed573;
-            border-top-color: transparent;
-            border-radius: 50%;
-            animation: spin 1s linear infinite;
-        }
-
-        @keyframes spin {
-            to { transform: rotate(360deg); }
-        }
-
         .app-container {
             opacity: 0;
             transition: opacity 0.5s ease;
@@ -1031,12 +996,12 @@
                         </div>
 
                         <button type="submit" class="submit-btn" id="submitBtn">
-                            Guardar y Compartir 💗
+                            Guardar 💗
                         </button>
                     </form>
 
                     <div class="success-message" id="successMessage">
-                        <strong>✨ Carta compartida</strong><br>
+                        <strong>✨ Guardado</strong><br>
                     </div>
                 </div>
             </section>
@@ -1046,7 +1011,7 @@
                 <div class="card">
                     <h2 class="card-title"><span>📸</span> Nuestro Álbum</h2>
                     <p style="margin-bottom: 25px; opacity: 0.8;">
-                        Sube fotos que quieras.
+                        Sube fotos.
                     </p>
 
                     <div class="upload-area" id="uploadArea">
@@ -1070,7 +1035,7 @@
                 <div class="card">
                     <h2 class="card-title"><span>📖</span> Línea del Tiempo</h2>
                     <p style="margin-bottom: 30px; opacity: 0.8;">
-                        Guarda momentos para recordar.
+                        Guarda momentos.
                     </p>
 
                     <div class="timeline" id="timeline"></div>
@@ -1137,18 +1102,27 @@
                     <button onclick="selectMood('✨')" class="mood-btn" style="background: none; border: 1px solid rgba(255,255,255,0.2); border-radius: 10px; padding: 10px; cursor: pointer; font-size: 1.5rem;">✨</button>
                 </div>
             </div>
-            <button class="submit-btn" onclick="saveMemory()" style="width: 100%;">Compartir Memoria</button>
+            <button class="submit-btn" onclick="saveMemory()" style="width: 100%;">Guardar Memoria</button>
         </div>
     </div>
 
     <script>
+        // ==========================================
+        // CONFIGURACIÓN - JSONBIN.IO
+        // ==========================================
         const CORRECT_PIN = '0126';
         let isAuthenticated = false;
         let currentMood = '';
         let currentPin = '';
 
-        const BIN_ID = '69d6fb2c856a68218912afbd';
-        const MASTER_KEY = '$2b$10$TU_MASTER_KEY_AQUI';
+        // ⚠️ REEMPLAZA ESTOS VALORES CON TUS DATOS DE JSONBIN.IO
+        // 1. Ve a https://jsonbin.io/
+        // 2. Crea una cuenta gratuita
+        // 3. Crea un nuevo bin (público)
+        // 4. Copia el ID del bin (está en la URL)
+        const BIN_ID = 'TU_BIN_ID_AQUI'; // Ejemplo: '64d5e8f9b89fc1a2b3c4d5e6'
+        const MASTER_KEY = '69d7029436566621a892208b'; // Opcional, para bins privados
+        
         const JSONBIN_URL = `https://api.jsonbin.io/v3/b/${BIN_ID}`;
 
         // Datos en memoria
@@ -1158,19 +1132,88 @@
             wishes: []
         };
 
-async function readData() {
-            const saved = localStorage.getItem('capsula_data');
-            if (saved) {
-                appData = JSON.parse(saved);
-            } else {
+        // ==========================================
+        // API JSONBIN.IO - FUNCIONES REALES
+        // ==========================================
+        
+        // Leer datos del servidor
+        async function readData() {
+            try {
+                const headers = {
+                    'Content-Type': 'application/json'
+                };
+                
+                // Si tienes Master Key (bin privado), úsala
+                if (MASTER_KEY && MASTER_KEY.includes('$2b$10$')) {
+                    headers['X-Master-Key'] = MASTER_KEY;
+                }
+
+                const response = await fetch(`${JSONBIN_URL}/latest`, { 
+                    method: 'GET',
+                    headers: headers 
+                });
+                
+                if (!response.ok) {
+                    throw new Error(`Error HTTP: ${response.status}`);
+                }
+                
+                const result = await response.json();
+                
+                // JSONBin devuelve los datos en .record
+                if (result && result.record) {
+                    appData = result.record;
+                    // Guardar backup local
+                    localStorage.setItem('capsula_backup', JSON.stringify(appData));
+                    return true;
+                }
+                
+                return false;
+                
+            } catch (e) {
+                console.error('Error leyendo de JSONBin:', e);
+                // Intentar cargar desde backup local
+                const backup = localStorage.getItem('capsula_backup');
+                if (backup) {
+                    appData = JSON.parse(backup);
+                    return true;
+                }
+                // Inicializar vacío si no hay nada
                 appData = { photos: [], memories: [], wishes: [] };
+                return false;
             }
-            return true;
         }
 
-async function saveData() {
-            localStorage.setItem('capsula_data', JSON.stringify(appData));
-            return true;
+        // Guardar datos en el servidor
+        async function saveData() {
+            try {
+                const headers = {
+                    'Content-Type': 'application/json'
+                };
+                
+                if (MASTER_KEY && MASTER_KEY.includes('$2b$10$')) {
+                    headers['X-Master-Key'] = MASTER_KEY;
+                }
+
+                const response = await fetch(JSONBIN_URL, {
+                    method: 'PUT',
+                    headers: headers,
+                    body: JSON.stringify(appData)
+                });
+                
+                if (!response.ok) {
+                    throw new Error(`Error HTTP: ${response.status}`);
+                }
+                
+                // Guardar backup local también
+                localStorage.setItem('capsula_backup', JSON.stringify(appData));
+                return true;
+                
+            } catch (e) {
+                console.error('Error guardando en JSONBin:', e);
+                // Solo guardar localmente como fallback
+                localStorage.setItem('capsula_backup', JSON.stringify(appData));
+                return false;
+            }
         }
 
         // ==========================================
@@ -1271,20 +1314,15 @@ async function saveData() {
             const dateOptions = { weekday: 'long', year: 'numeric', month: 'long', day: 'numeric' };
             document.getElementById('currentDate').textContent = new Date().toLocaleDateString('es-ES', dateOptions);
 
-            // Cargar datos
+            // Cargar datos desde JSONBin
             await readData();
             renderAll();
 
-            // Recargar cada 10 segundos
+            // Recargar cada 10 segundos para sincronizar con otros dispositivos
             setInterval(async () => {
                 await readData();
                 renderAll();
             }, 10000);
-        }
-
-function showSync() {
-            // Sync indicator removed per request
-            console.log('Data saved locally');
         }
 
         function renderAll() {
@@ -1317,7 +1355,7 @@ function showSync() {
         }
 
         // ==========================================
-        // CARTAS (Email + Local)
+        // CARTAS (Email)
         // ==========================================
         document.getElementById('letterForm').addEventListener('submit', async function(e) {
             e.preventDefault();
@@ -1325,7 +1363,6 @@ function showSync() {
             const successMsg = document.getElementById('successMessage');
 
             const message = document.getElementById('letterMessage').value;
-            const mood = document.getElementById('letterMood').value;
 
             if (!message.trim()) return;
 
@@ -1341,7 +1378,6 @@ function showSync() {
                     headers: { 'Accept': 'application/json' }
                 }).catch(() => {});
 
-                showSync();
                 successMsg.classList.add('active');
                 this.reset();
                 
@@ -1349,7 +1385,7 @@ function showSync() {
                 console.error('Error:', error);
             } finally {
                 btn.disabled = false;
-                btn.textContent = 'Guardar y Compartir 💗';
+                btn.textContent = 'Guardar 💗';
                 
                 setTimeout(() => {
                     successMsg.classList.remove('active');
@@ -1423,8 +1459,8 @@ function showSync() {
                         date: new Date().toISOString()
                     });
 
+                    // Guardar en JSONBin
                     await saveData();
-                    showSync();
                     renderGallery();
 
                 } catch (error) {
@@ -1454,7 +1490,6 @@ function showSync() {
 
             appData.photos = appData.photos.filter(p => p.id !== id);
             await saveData();
-            showSync();
             renderGallery();
         }
 
@@ -1487,7 +1522,6 @@ function showSync() {
             
             appData.memories.splice(index, 1);
             await saveData();
-            showSync();
             renderMemories();
         }
 
@@ -1528,7 +1562,6 @@ function showSync() {
 
             await saveData();
             closeModal('memoryModal');
-            showSync();
             renderMemories();
         }
 
@@ -1579,14 +1612,12 @@ function showSync() {
             jar.style.transform = 'scale(1.1)';
             setTimeout(() => jar.style.transform = 'scale(1)', 200);
             
-            showSync();
             renderWishes();
         }
 
         async function deleteWish(index) {
             appData.wishes.splice(index, 1);
             await saveData();
-            showSync();
             renderWishes();
         }
 
